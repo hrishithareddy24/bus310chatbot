@@ -18,15 +18,15 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 # === Load environment ===
 load_dotenv()
+def get_secret(name, default=None):
+    return st.secrets.get(name, os.getenv(name, default))
 
-st.set_page_config(page_title="BUS 310 Tutor", layout="wide")
-st.title("📘 BUS 310 Tutor ")
+
+st.set_page_config(page_title="BUS 310 Chatbot", layout="wide")
+st.title(" BUS 310 Chatbot ")
 st.markdown("""
-**George Mason University – BUS 310**  
-**Prof. Fatou Diouf · TA: Hrishitha Reddy Likki**  
----
-This tutor answers **only** from uploaded syllabus, lecture slides, rubrics, and assignments.  
-Put PDFs in `./data` → click **Rebuild Index**.
+**George Mason University – BUS 310**   
+
 """)
 
 DATA_PATH = Path("data")
@@ -38,10 +38,11 @@ VECTOR_PATH = Path("vectorstore")
 # Set in .env:
 # USE_OPENAI=1  (paid, fast)
 # USE_OPENAI=0  (free HF)
-USE_OPENAI = os.getenv("USE_OPENAI", "0").strip() == "1"
+USE_OPENAI = get_secret("USE_OPENAI", "0").strip() == "1"
 
 # For paid OpenAI
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini").strip()
+OPENAI_MODEL = get_secret("OPENAI_MODEL", "gpt-5-mini").strip()
+openai_key = get_secret("OPENAI_API_KEY")
 
 # Guardrail thresholds (tweak in .env if needed)
 # If the retrieved context is too small, we refuse.
@@ -91,7 +92,7 @@ def build_system_prompt(user_question: str):
 def load_all_pdfs():
     pdfs = list(DATA_PATH.glob("*.pdf"))
     if not pdfs:
-        st.warning("⚠️ No PDFs found in ./data")
+        st.warning(" No PDFs found in ./data")
         return []
     docs = []
     for pdf in pdfs:
@@ -128,7 +129,7 @@ def _build_vectorstore(_docs, batch_size=64):
     VECTOR_PATH.mkdir(exist_ok=True)
     vs.save_local(str(VECTOR_PATH))
     pbar.progress(1.0)
-    st.success("✅ Index built successfully!")
+    st.success(" Index built successfully!")
     return vs
 
 @st.cache_resource
@@ -144,9 +145,9 @@ def load_vectorstore():
 st.sidebar.header("Course Files")
 st.sidebar.write("📁 Put PDFs in the `./data` folder.")
 st.sidebar.markdown("---")
-st.sidebar.write("**Model mode:** " + ("✅ Paid OpenAI" if USE_OPENAI else "🆓 Free HuggingFace"))
+st.sidebar.write("**Model mode:** " + ("Paid OpenAI" if USE_OPENAI else "Free HuggingFace"))
 
-if st.sidebar.button("🔁 Rebuild Index"):
+if st.sidebar.button(" Rebuild Index"):
     st.cache_resource.clear()
     with st.spinner("Building index from PDFs…"):
         docs = load_all_pdfs()
@@ -158,9 +159,9 @@ if st.sidebar.button("🔁 Rebuild Index"):
 if "vs" not in st.session_state:
     st.session_state.vs = load_vectorstore()
     if st.session_state.vs:
-        st.success("✅ Vectorstore loaded successfully!")
+        st.success("Vectorstore loaded successfully!")
     else:
-        st.warning("⚠️ No index found. Click ‘Rebuild Index’ to create one.")
+        st.warning(" No index found. Click ‘Rebuild Index’ to create one.")
 
 # =========================
 # Chat
@@ -169,7 +170,7 @@ prompt = st.chat_input("Ask a BUS 310 question (e.g. grading policy, lesson topi
 
 if prompt:
     if st.session_state.vs is None:
-        st.warning("⚠️ Please upload PDFs and rebuild index first.")
+        st.warning(" Please upload PDFs and rebuild index first.")
     else:
         st.chat_message("user").write(prompt)
 
@@ -192,7 +193,7 @@ if prompt:
             if USE_OPENAI:
                 openai_key = os.getenv("OPENAI_API_KEY")
                 if not openai_key:
-                    st.error("🚨 Missing OPENAI_API_KEY in your .env file.")
+                    st.error(" Missing OPENAI_API_KEY in your .env file.")
                 else:
                     try:
                         llm = ChatOpenAI(
@@ -217,7 +218,7 @@ if prompt:
             else:
                 hf_token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
                 if not hf_token:
-                    st.error("🚨 Missing Hugging Face token! Add HUGGINGFACEHUB_API_TOKEN=... to your .env file.")
+                    st.error(" Missing Hugging Face token! Add HUGGINGFACEHUB_API_TOKEN=... to your .env file.")
                 else:
                     try:
                         client = InferenceClient("HuggingFaceH4/zephyr-7b-beta", token=hf_token)
