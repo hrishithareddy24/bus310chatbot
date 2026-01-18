@@ -142,16 +142,16 @@ def load_vectorstore():
 # =========================
 # Sidebar
 # =========================
-st.sidebar.header("Course Files")
-st.sidebar.write("📁 Put PDFs in the `./data` folder.")
-st.sidebar.markdown("---")
-st.sidebar.write("**Model mode:** " + ("Paid OpenAI" if USE_OPENAI else "Free HuggingFace"))
+#st.sidebar.header("Course Files")
+#st.sidebar.write("📁 Put PDFs in the `./data` folder.")
+#st.sidebar.markdown("---")
+#st.sidebar.write("**Model mode:** " + ("Paid OpenAI" if USE_OPENAI else "Free HuggingFace"))
 
-if st.sidebar.button(" Rebuild Index"):
-    st.cache_resource.clear()
-    with st.spinner("Building index from PDFs…"):
-        docs = load_all_pdfs()
-        st.session_state.vs = _build_vectorstore(docs)
+#if st.sidebar.button(" Rebuild Index"):
+    #st.cache_resource.clear()
+    #with st.spinner("Building index from PDFs…"):
+        #docs = load_all_pdfs()
+        #st.session_state.vs = _build_vectorstore(docs)
 
 # =========================
 # Ensure vectorstore
