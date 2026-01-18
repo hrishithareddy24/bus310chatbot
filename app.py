@@ -162,7 +162,7 @@ if "vs" not in st.session_state:
     st.session_state.vs = load_vectorstore()
 
     if st.session_state.vs:
-        st.success("✅ Vectorstore loaded successfully!")
+        st.success(" Vectorstore loaded successfully!")
     else:
         with st.spinner("First-time setup: building index from PDFs…"):
             docs = load_all_pdfs()
@@ -171,7 +171,7 @@ if "vs" not in st.session_state:
 # =========================
 # Chat
 # =========================
-prompt = st.chat_input("Ask a BUS 310 question (e.g. grading policy, lesson topics)…")
+prompt = st.chat_input("Ask a BUS 310 question (e.g.lesson topics, formulas)…")
 
 if prompt:
     if st.session_state.vs is None:
