@@ -243,4 +243,4 @@ if prompt:
                         st.error(f"Model error: {e}")
 
 st.markdown("---")
-st.caption("© 2026 Hrishitha Reddy Likki · George Mason University · BUS 310 Tutor")
+st.caption("© 2026 George Mason University · BUS 310 Chatbot")
