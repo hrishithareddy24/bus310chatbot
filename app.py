@@ -160,10 +160,13 @@ def load_vectorstore():
 # =========================
 if "vs" not in st.session_state:
     st.session_state.vs = load_vectorstore()
+
     if st.session_state.vs:
-        st.success("Vectorstore loaded successfully!")
+        st.success("✅ Vectorstore loaded successfully!")
     else:
-        st.warning(" No index found. Click ‘Rebuild Index’ to create one.")
+        with st.spinner("First-time setup: building index from PDFs…"):
+            docs = load_all_pdfs()
+            st.session_state.vs = _build_vectorstore(docs)
 
 # =========================
 # Chat
