@@ -18,6 +18,23 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 # === Load environment ===
 load_dotenv()
+# =========================
+# Admin Mode (hidden)
+# =========================
+ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", None)
+
+with st.expander("Admin access"):
+    admin_input = st.text_input("Enter admin password", type="password")
+
+    if ADMIN_PASSWORD and admin_input == ADMIN_PASSWORD:
+        st.success("Admin mode enabled")
+
+        if st.button("🔁 Rebuild Index"):
+            st.cache_resource.clear()
+            with st.spinner("Rebuilding index from PDFs…"):
+                docs = load_all_pdfs()
+                st.session_state.vs = _build_vectorstore(docs)
+
 def get_secret(name, default=None):
     return st.secrets.get(name, os.getenv(name, default))
 
