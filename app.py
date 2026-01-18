@@ -142,21 +142,6 @@ def load_vectorstore():
 
 
 # =========================
-# Admin Mode (hidden)
-# =========================
-with st.expander("Admin access"):
-    admin_input = st.text_input("Enter admin password", type="password")
-
-    if ADMIN_PASSWORD and admin_input == ADMIN_PASSWORD:
-        st.success("Admin mode enabled")
-
-        if st.button("🔁 Rebuild Index"):
-            st.cache_resource.clear()
-            with st.spinner("Rebuilding index from PDFs…"):
-                docs = load_all_pdfs()  
-                st.session_state.vs = _build_vectorstore(docs)
-
-# =========================
 # Sidebar
 # =========================
 #st.sidebar.header("Course Files")
