@@ -23,8 +23,8 @@ def get_secret(name, default=None):
     return st.secrets.get(name, os.getenv(name, default))
 
 
-st.set_page_config(page_title="BUS 310 Chatbot", layout="wide")
-st.title(" BUS 310 Chatbot ")
+st.set_page_config(page_title="Prof. Fatou Diouf – BUS 310 Chatbot", layout="wide")
+st.title(" Prof. Fatou Diouf – BUS 310 Chatbot ")
 st.markdown("""
 **George Mason University – BUS 310**   
 
