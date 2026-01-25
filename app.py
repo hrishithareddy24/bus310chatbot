@@ -167,6 +167,22 @@ if "vs" not in st.session_state:
         with st.spinner("First-time setup: building index from PDFs…"):
             docs = load_all_pdfs()
             st.session_state.vs = _build_vectorstore(docs)
+            
+# =========================
+# Chat History (show full conversation)
+# =========================
+if "messages" not in st.session_state:
+    st.session_state.messages = []  # each item: {"role": "user"/"assistant", "content": "..."}
+
+# Render previous messages (so user sees full conversation)
+for m in st.session_state.messages:
+    st.chat_message(m["role"]).write(m["content"])
+
+# Optional: Clear chat button
+if st.button("Clear chat"):
+    st.session_state.messages = []
+    st.rerun()
+
 
 # =========================
 # Chat
@@ -174,6 +190,9 @@ if "vs" not in st.session_state:
 prompt = st.chat_input("Ask a BUS 310 question (e.g.lesson topics, formulas)…")
 
 if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+
     if st.session_state.vs is None:
         st.warning(" Please upload PDFs and rebuild index first.")
     else:
@@ -190,7 +209,9 @@ if prompt:
 
         # Hard refusal if retrieval is weak
         if len(context) < MIN_CONTEXT_CHARS:
-            st.chat_message("assistant").write("I couldn’t find this in the BUS 310 materials.")
+            answer = "I couldn’t find this in the BUS 310 materials."
+            st.session_state.messages.append({"role": "assistant", "content": answer})
+            st.chat_message("assistant").write(answer)
         else:
             system_prompt = build_system_prompt(prompt)
 
@@ -243,7 +264,9 @@ if prompt:
                         # Hard cap length
                         answer = clip_to_n_sentences(answer, 2 if is_definition_question(prompt) else 5)
 
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
                         st.chat_message("assistant").write(answer)
+
                     except Exception as e:
                         st.error(f"Model error: {e}")
 
