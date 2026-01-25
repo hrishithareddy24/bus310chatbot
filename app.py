@@ -30,6 +30,7 @@ st.markdown("""
 
 """)
 
+
 DATA_PATH = Path("data")
 VECTOR_PATH = Path("vectorstore")
 
@@ -168,58 +169,64 @@ if "vs" not in st.session_state:
             docs = load_all_pdfs()
             st.session_state.vs = _build_vectorstore(docs)
             
+
 # =========================
-# Chat History (show full conversation)
+# Chat history (shows full conversation)
 # =========================
 if "messages" not in st.session_state:
-    st.session_state.messages = []  # each item: {"role": "user"/"assistant", "content": "..."}
-
-# Render previous messages (so user sees full conversation)
-for m in st.session_state.messages:
-    st.chat_message(m["role"]).write(m["content"])
-
-# Optional: Clear chat button
-if st.button("Clear chat"):
     st.session_state.messages = []
-    st.rerun()
 
+col1, col2 = st.columns([1, 6])
+with col1:
+    if st.button("Clear chat"):
+        st.session_state.messages = []
+        st.rerun()
+
+# Render all past messages
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
 # =========================
 # Chat
 # =========================
-prompt = st.chat_input("Ask a BUS 310 question (e.g.lesson topics, formulas)…")
+prompt = st.chat_input("Ask a BUS 310 question (e.g., lesson topics, formulas)…")
 
 if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # prevent duplicate user messages on rerun
+    if not (st.session_state.messages
+            and st.session_state.messages[-1]["role"] == "user"
+            and st.session_state.messages[-1]["content"] == prompt):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
     st.chat_message("user").write(prompt)
 
     if st.session_state.vs is None:
-        st.warning(" Please upload PDFs and rebuild index first.")
+        answer = "⚠️ Please upload PDFs and rebuild the index first."
+        st.session_state.messages.append({"role": "assistant", "content": answer})
+        st.chat_message("assistant").write(answer)
+
     else:
-        st.chat_message("user").write(prompt)
-
         with st.spinner("🔍 Searching BUS 310 materials…"):
-            # Use similarity_search_with_score so we can reject weak matches
             results = st.session_state.vs.similarity_search_with_score(prompt, k=6)
-
-            # Keep only good matches
             good = [(d, s) for (d, s) in results if s <= DIST_THRESHOLD]
             top_docs = [d for (d, _) in good][:4]
             context = "\n\n".join(d.page_content for d in top_docs).strip()
 
-        # Hard refusal if retrieval is weak
         if len(context) < MIN_CONTEXT_CHARS:
             answer = "I couldn’t find this in the BUS 310 materials."
             st.session_state.messages.append({"role": "assistant", "content": answer})
             st.chat_message("assistant").write(answer)
+
         else:
             system_prompt = build_system_prompt(prompt)
 
-            # ----- Paid OpenAI path (fast) -----
             if USE_OPENAI:
                 openai_key = os.getenv("OPENAI_API_KEY")
                 if not openai_key:
-                    st.error(" Missing OPENAI_API_KEY in your .env file.")
+                    answer = " Missing OPENAI_API_KEY in Streamlit secrets."
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                    st.chat_message("assistant").write(answer)
                 else:
                     try:
                         llm = ChatOpenAI(
@@ -232,19 +239,22 @@ if prompt:
                             HumanMessage(content=f"Context:\n{context}\n\nQuestion: {prompt}"),
                         ]
                         answer = llm.invoke(messages).content
-
-                        # Hard cap length
                         answer = clip_to_n_sentences(answer, 2 if is_definition_question(prompt) else 5)
 
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
                         st.chat_message("assistant").write(answer)
-                    except Exception as e:
-                        st.error(f"Model error: {e}")
 
-            # ----- Free HuggingFace path (slower) -----
+                    except Exception as e:
+                        answer = f"Model error: {e}"
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                        st.chat_message("assistant").write(answer)
+
             else:
                 hf_token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
                 if not hf_token:
-                    st.error(" Missing Hugging Face token! Add HUGGINGFACEHUB_API_TOKEN=... to your .env file.")
+                    answer = " Missing Hugging Face token in Streamlit secrets."
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                    st.chat_message("assistant").write(answer)
                 else:
                     try:
                         client = InferenceClient("HuggingFaceH4/zephyr-7b-beta", token=hf_token)
@@ -260,15 +270,16 @@ if prompt:
                             temperature=0.3,
                         )
                         answer = response.choices[0].message["content"]
-
-                        # Hard cap length
                         answer = clip_to_n_sentences(answer, 2 if is_definition_question(prompt) else 5)
 
                         st.session_state.messages.append({"role": "assistant", "content": answer})
                         st.chat_message("assistant").write(answer)
 
                     except Exception as e:
-                        st.error(f"Model error: {e}")
+                        answer = f"Model error: {e}"
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                        st.chat_message("assistant").write(answer)
+
 
 st.markdown("---")
 st.caption("© 2026 George Mason University · BUS 310 Chatbot")
