@@ -10,10 +10,10 @@ Deployed the application using Streamlit and iteratively improved functionality 
 
 
 Technology Stack:
-Python
-LangChain
-FAISS (Vector Database)
-OpenAI API
+Python,
+LangChain,
+FAISS (Vector Database),
+OpenAI API,
 Streamlit
 
 
